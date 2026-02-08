@@ -17,21 +17,21 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
   - Set up build scripts for Node.js and browser bundles
   - _Requirements: 2.4, 9.6_
 
-- [ ] 2. Implement TOON Serializer core
+- [x] 2. Implement TOON Serializer core
   - [x] 2.1 Create TOONSerializer class with configuration interface
     - Define `TOONSerializerConfig` interface
     - Implement constructor with config validation
     - Create `serialize(value: any): string` method stub
     - _Requirements: 1.1, 1.8_
   
-  - [-] 2.2 Implement primitive serialization
+  - [x] 2.2 Implement primitive serialization
     - Handle numbers, booleans, null/undefined
     - Implement string quoting logic (minimal quoting)
     - Create `needsQuoting(str: string): boolean` helper
     - Create `serializePrimitive(value: any): string` method
     - _Requirements: 1.4, 1.5_
   
-  - [~] 2.3 Implement object serialization
+  - [x] 2.3 Implement object serialization
     - Create `serializeObject(obj: Record<string, any>, depth: number): string` method
     - Use indentation for nesting (2 spaces per level)
     - Apply field aliasing from config
@@ -39,14 +39,14 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - Add max depth protection against circular references
     - _Requirements: 1.1, 1.3, 6.3, 6.5_
   
-  - [~] 2.4 Implement array serialization
+  - [x] 2.4 Implement array serialization
     - Create `detectUniformArray(arr: any[]): boolean` helper
     - Implement `serializeTabular(arr: any[]): string` for uniform arrays
     - Implement `serializeNonUniformArray(arr: any[]): string` for mixed arrays
     - Include array length in schema declaration
     - _Requirements: 1.2, 1.7, 6.1_
   
-  - [~] 2.5 Implement circular reference detection
+  - [x] 2.5 Implement circular reference detection
     - Track object references during serialization using WeakSet
     - Return `[Circular: path]` notation when cycle detected
     - _Requirements: 8.5_
@@ -87,7 +87,7 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - _Requirements: 1.1, 1.4, 1.5_
 
 - [ ] 3. Implement TOON Parser
-  - [~] 3.1 Create TOONParser class
+  - [x] 3.1 Create TOONParser class
     - Implement `parse(toonString: string): any` method
     - Create `parseValue(lines: string[], index: number)` helper
     - Create `parsePrimitive(token: string): any` helper
