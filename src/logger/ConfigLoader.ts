@@ -3,9 +3,15 @@
  * Handles loading configuration from multiple sources with proper precedence
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { LoggerConfig, LogLevel, ResolvedConfig, DEFAULT_CONFIG, detectEnvironment } from './types';
+
+// Conditional import for Node.js only
+let fs: any;
+let path: any;
+if (typeof window === 'undefined') {
+  fs = require('fs');
+  path = require('path');
+}
 
 /**
  * Loads configuration from environment variables
@@ -13,6 +19,11 @@ import { LoggerConfig, LogLevel, ResolvedConfig, DEFAULT_CONFIG, detectEnvironme
  * @returns Partial configuration from environment variables
  */
 export function loadFromEnvironment(): Partial<LoggerConfig> {
+  // Browser environment - return empty config
+  if (typeof window !== 'undefined' || typeof process === 'undefined') {
+    return {};
+  }
+
   const config: Partial<LoggerConfig> = {};
 
   // Load log level from AXON_LOG_LEVEL
@@ -86,6 +97,11 @@ export function loadFromEnvironment(): Partial<LoggerConfig> {
  * @returns Partial configuration from file, or empty object if file not found
  */
 export function loadFromFile(startDir?: string): Partial<LoggerConfig> {
+  // Browser environment - return empty config
+  if (typeof window !== 'undefined' || !fs || !path) {
+    return {};
+  }
+
   const searchDir = startDir || process.cwd();
   const configFileName = '.axonrc.json';
 

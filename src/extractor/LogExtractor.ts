@@ -3,9 +3,16 @@
  * Provides utilities for extracting and filtering log entries from TOON-formatted log files
  */
 
-import * as fs from 'fs';
 import { TOONParser } from '../parser/TOONParser';
 import { LogLevel, LogEntry } from '../logger/types';
+
+// Conditional import for Node.js only
+let fs: any;
+let path: any;
+if (typeof window === 'undefined') {
+  fs = require('fs');
+  path = require('path');
+}
 
 /**
  * LogExtractor class
@@ -21,6 +28,10 @@ export class LogExtractor {
    * @param logFilePath - Path to the log file to extract from
    */
   constructor(logFilePath: string) {
+    if (typeof window !== 'undefined') {
+      throw new Error('LogExtractor is not supported in browser environments. Use Logger with BrowserFileManager instead.');
+    }
+    
     if (!logFilePath || typeof logFilePath !== 'string') {
       throw new Error('Invalid logFilePath: must be a non-empty string');
     }
@@ -41,7 +52,7 @@ export class LogExtractor {
       }
 
       const content = fs.readFileSync(this.logFilePath, 'utf8');
-      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      const lines = content.split('\n').filter((line: string) => line.trim().length > 0);
 
       // Parse each entry (could be a log entry or a marker)
       for (const line of lines) {
@@ -204,7 +215,6 @@ export class LogExtractor {
 
     try {
       // Ensure directory exists
-      const path = require('path');
       const dir = path.dirname(outputPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });

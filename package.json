@@ -1,9 +1,13 @@
 {
   "name": "axon-logger",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A token-efficient logging framework using TOON (Token-Oriented Object Notation) format",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "browser": {
+    "./dist/extractor/LogExtractor.js": false,
+    "./dist/cli/axon-cli.js": false
+  },
   "scripts": {
     "build": "tsc",
     "build:browser": "webpack --config webpack.config.js",
