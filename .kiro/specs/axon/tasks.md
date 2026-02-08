@@ -150,26 +150,26 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
   - Verify round-trip property holds for various object types
   - Ask the user if questions arise
 
-- [ ] 6. Implement Logger core
+- [x] 6. Implement Logger core
   - [x] 6.1 Create LogLevel enum and LogEntry interface
     - Define `LogLevel` enum (DEBUG, INFO, WARN, ERROR, FATAL)
     - Define `LogEntry` interface with ts, lvl, msg, meta fields
     - _Requirements: 2.1, 2.2_
   
-  - [~] 6.2 Create LoggerConfig interface with defaults
+  - [x] 6.2 Create LoggerConfig interface with defaults
     - Define `LoggerConfig` interface with all configuration options
     - Create `DEFAULT_CONFIG` constant
     - Implement environment detection (`detectEnvironment()`)
     - _Requirements: 2.5, 7.7, 10.4_
   
-  - [~] 6.3 Implement Logger class constructor
+  - [x] 6.3 Implement Logger class constructor
     - Accept configuration options
     - Merge with defaults
     - Validate configuration values
     - Initialize internal state (buffer, global metadata)
     - _Requirements: 2.5, 7.1, 7.5_
   
-  - [~] 6.4 Implement log level methods
+  - [x] 6.4 Implement log level methods
     - Create `debug()`, `info()`, `warn()`, `error()`, `fatal()` methods
     - Each method creates LogEntry with timestamp and level
     - Apply log level filtering
@@ -177,13 +177,13 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - Add entry to buffer
     - _Requirements: 2.1, 2.2, 2.3, 2.7_
   
-  - [~] 6.5 Implement metadata management
+  - [x] 6.5 Implement metadata management
     - Create `setGlobalMetadata(metadata: Record<string, any>)` method
     - Create `clearGlobalMetadata()` method
     - Implement metadata merging logic (per-entry wins)
     - _Requirements: 14.1, 14.2, 14.3, 14.4_
   
-  - [~] 6.6 Implement section markers
+  - [x] 6.6 Implement section markers
     - Create `mark(label: string)` method
     - Generate marker in format `=== MARKER: {label} | {timestamp} ===`
     - Add marker to buffer
