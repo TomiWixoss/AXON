@@ -322,6 +322,14 @@ export class FileManager {
   }
 
   /**
+   * Gets the current buffer (for testing)
+   * @returns Copy of the current buffer
+   */
+  getBuffer(): ReadonlyArray<string> {
+    return [...this.buffer];
+  }
+
+  /**
    * Gets the current file size (for testing)
    * @returns Current file size in bytes
    */

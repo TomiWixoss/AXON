@@ -292,6 +292,14 @@ export class BrowserFileManager {
   }
 
   /**
+   * Gets the current buffer (for testing)
+   * @returns Copy of the current buffer
+   */
+  getBuffer(): ReadonlyArray<string> {
+    return [...this.buffer];
+  }
+
+  /**
    * Gets whether IndexedDB is being used (for testing)
    * @returns True if using IndexedDB, false if using localStorage
    */

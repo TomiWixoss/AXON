@@ -111,6 +111,7 @@ export class Logger {
   private globalMetadata: Record<string, any> = {};
   private serializer: TOONSerializer;
   private fileManager: FileManager | BrowserFileManager;
+  private buffer: (LogEntry | string)[] = []; // Buffer for LogEntry objects and markers
 
   /**
    * Creates a new Logger instance
@@ -236,13 +237,19 @@ export class Logger {
         }
       }
 
-      // Serialize entry to TOON format
-      const toonString = this.serializer.serialize(entry);
+      // Add entry to buffer
+      this.buffer.push(entry);
 
-      // Write to file manager
-      this.fileManager.write(toonString);
+      // Auto-flush if buffer size reached
+      if (this.buffer.length >= this.config.bufferSize) {
+        this.flush().catch(error => {
+          if (this.config.onError) {
+            this.config.onError(error);
+          }
+        });
+      }
     } catch (error) {
-      // Handle serialization errors gracefully
+      // Handle errors gracefully
       if (this.config.onError) {
         this.config.onError(error as Error);
       }
@@ -314,7 +321,7 @@ export class Logger {
   mark(label: string): void {
     const timestamp = Date.now();
     const marker = `=== MARKER: ${label} | ${timestamp} ===`;
-    this.fileManager.write(marker);
+    this.buffer.push(marker);
   }
 
   /**
@@ -322,7 +329,33 @@ export class Logger {
    * Forces immediate write of all pending entries
    */
   async flush(): Promise<void> {
-    await this.fileManager.flush();
+    if (this.buffer.length === 0) {
+      return;
+    }
+
+    try {
+      // Serialize all entries in buffer
+      for (const item of this.buffer) {
+        if (typeof item === 'string') {
+          // It's a marker
+          this.fileManager.write(item);
+        } else {
+          // It's a LogEntry - serialize it
+          const toonString = this.serializer.serialize(item);
+          this.fileManager.write(toonString);
+        }
+      }
+
+      // Clear buffer after serialization
+      this.buffer = [];
+
+      // Flush file manager
+      await this.fileManager.flush();
+    } catch (error) {
+      if (this.config.onError) {
+        this.config.onError(error as Error);
+      }
+    }
   }
 
   /**
@@ -355,6 +388,14 @@ export class Logger {
    */
   getGlobalMetadata(): Readonly<Record<string, any>> {
     return { ...this.globalMetadata };
+  }
+
+  /**
+   * Gets the current buffer (for testing purposes)
+   * @returns Copy of the current buffer
+   */
+  getBuffer(): ReadonlyArray<string | LogEntry> {
+    return [...this.buffer];
   }
 
   /**
@@ -468,11 +509,11 @@ export class Logger {
         }
       }
 
-      // Serialize and write immediately
+      // Serialize and write immediately (bypass Logger buffer)
       const toonString = this.serializer.serialize(entry);
       this.fileManager.write(toonString);
       
-      // Flush immediately
+      // Flush file manager immediately
       await this.fileManager.flush();
     } catch (error) {
       if (this.config.onError) {
@@ -521,11 +562,11 @@ export class Logger {
         }
       }
 
-      // Serialize and write immediately
+      // Serialize and write immediately (bypass Logger buffer)
       const toonString = this.serializer.serialize(entry);
       this.fileManager.write(toonString);
       
-      // Flush immediately
+      // Flush file manager immediately
       await this.fileManager.flush();
     } catch (error) {
       if (this.config.onError) {
