@@ -93,20 +93,20 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - Create `parsePrimitive(token: string): any` helper
     - _Requirements: 13.1_
   
-  - [~] 3.2 Implement object parsing
+  - [-] 3.2 Implement object parsing
     - Create `parseObject(lines: string[], startIndex: number)` method
     - Handle indentation-based nesting
     - Reconstruct nested object structures
     - _Requirements: 13.2, 13.3_
   
-  - [~] 3.3 Implement tabular array parsing
+  - [x] 3.3 Implement tabular array parsing
     - Create `extractSchema(schemaLine: string)` helper
     - Create `parseTabular(schema, dataLines: string[])` method
     - Parse schema declaration `[length]{fields}:`
     - Reconstruct objects from data rows
     - _Requirements: 13.2, 13.3_
   
-  - [~] 3.4 Implement error handling with clear messages
+  - [x] 3.4 Implement error handling with clear messages
     - Add line number tracking during parsing
     - Throw descriptive errors for malformed input
     - Include context in error messages
@@ -131,8 +131,8 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - Test various delimiter types
     - _Requirements: 13.5_
 
-- [ ] 4. Implement token counting utility
-  - [~] 4.1 Create TokenCounter class
+- [x] 4. Implement token counting utility
+  - [x] 4.1 Create TokenCounter class
     - Implement `countTokens(text: string): number` method
     - Use whitespace-based tokenization with 1.3x multiplier
     - _Requirements: 6.6, 12.5_
@@ -145,13 +145,13 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
     - **Property 27: Token Counting Accuracy**
     - **Validates: Requirements 12.5**
 
-- [~] 5. Checkpoint - Core serialization complete
+- [x] 5. Checkpoint - Core serialization complete
   - Ensure all serializer and parser tests pass
   - Verify round-trip property holds for various object types
   - Ask the user if questions arise
 
 - [ ] 6. Implement Logger core
-  - [~] 6.1 Create LogLevel enum and LogEntry interface
+  - [x] 6.1 Create LogLevel enum and LogEntry interface
     - Define `LogLevel` enum (DEBUG, INFO, WARN, ERROR, FATAL)
     - Define `LogEntry` interface with ts, lvl, msg, meta fields
     - _Requirements: 2.1, 2.2_
