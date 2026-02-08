@@ -13,3 +13,9 @@ export {
 } from './types';
 
 export { Logger } from './Logger';
+
+export {
+  loadFromEnvironment,
+  loadFromFile,
+  mergeConfigurations
+} from './ConfigLoader';
