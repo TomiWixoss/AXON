@@ -1,6 +1,6 @@
 {
-  "name": "axon",
-  "version": "0.1.0",
+  "name": "axon-logger",
+  "version": "1.0.0",
   "description": "A token-efficient logging framework using TOON (Token-Oriented Object Notation) format",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
