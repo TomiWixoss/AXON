@@ -18,13 +18,13 @@ The implementation uses TypeScript for type safety and compiles to JavaScript fo
   - _Requirements: 2.4, 9.6_
 
 - [ ] 2. Implement TOON Serializer core
-  - [~] 2.1 Create TOONSerializer class with configuration interface
+  - [x] 2.1 Create TOONSerializer class with configuration interface
     - Define `TOONSerializerConfig` interface
     - Implement constructor with config validation
     - Create `serialize(value: any): string` method stub
     - _Requirements: 1.1, 1.8_
   
-  - [~] 2.2 Implement primitive serialization
+  - [-] 2.2 Implement primitive serialization
     - Handle numbers, booleans, null/undefined
     - Implement string quoting logic (minimal quoting)
     - Create `needsQuoting(str: string): boolean` helper
