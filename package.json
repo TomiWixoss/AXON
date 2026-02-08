@@ -1,12 +1,24 @@
 {
   "name": "axon-logger",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A token-efficient logging framework using TOON (Token-Oriented Object Notation) format",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
+      "node": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "browser": {
+    "./dist/file-manager/FileManager.js": "./dist/file-manager/BrowserFileManager.js",
     "./dist/extractor/LogExtractor.js": false,
-    "./dist/cli/axon-cli.js": false
+    "./dist/cli/axon-cli.js": false,
+    "fs": false,
+    "path": false
   },
   "scripts": {
     "build": "tsc",

@@ -3,9 +3,15 @@
  * Handles file I/O operations, buffering, and rotation
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { FileManagerConfig, RotationMetadata } from './types';
+
+// Conditional import for Node.js only
+let fs: any;
+let path: any;
+if (typeof window === 'undefined') {
+  fs = require('fs');
+  path = require('path');
+}
 
 /**
  * Retry configuration for error handling
@@ -22,7 +28,7 @@ interface RetryConfig {
 export class FileManager {
   private config: FileManagerConfig;
   private buffer: string[] = [];
-  private fileHandle: fs.promises.FileHandle | null = null;
+  private fileHandle: any | null = null;
   private rotationMetadata: RotationMetadata;
   private flushTimer: NodeJS.Timeout | null = null;
   private retryConfig: RetryConfig = {
@@ -36,6 +42,10 @@ export class FileManager {
    * @param config - Configuration for file operations
    */
   constructor(config: FileManagerConfig) {
+    if (typeof window !== 'undefined') {
+      throw new Error('FileManager is for Node.js only. Use BrowserFileManager for browser environments.');
+    }
+    
     this.config = config;
     
     // Initialize rotation metadata

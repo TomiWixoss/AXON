@@ -33,19 +33,33 @@ export {
 
 // File Manager exports
 export {
-  FileManager,
   BrowserFileManager,
   FileManagerConfig,
   RotationMetadata
 } from './file-manager';
+
+// Conditional export for Node.js only modules
+export type { FileManager } from './file-manager/FileManager';
+export type { LogExtractor } from './extractor/LogExtractor';
 
 // Utils exports
 export {
   TokenCounter
 } from './utils';
 
-// Extractor exports
-export {
-  LogExtractor
-} from './extractor';
+// Dynamic imports for Node.js only (prevents bundling in browser)
+export const loadFileManager = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('FileManager is only available in Node.js. Use BrowserFileManager for browser environments.');
+  }
+  const { FileManager } = await import('./file-manager/FileManager');
+  return FileManager;
+};
 
+export const loadLogExtractor = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('LogExtractor is only available in Node.js.');
+  }
+  const { LogExtractor } = await import('./extractor/LogExtractor');
+  return LogExtractor;
+};
