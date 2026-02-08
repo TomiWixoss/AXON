@@ -144,41 +144,54 @@ export class TOONSerializer {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private serializeValue(value: any, depth: number, visited: WeakSet<object>, path: string[]): string {
-    // Handle primitives
-    if (value === null || value === undefined || 
-        typeof value === 'number' || typeof value === 'boolean' || 
-        typeof value === 'string') {
+    // Handle primitives FIRST - including strings
+    // This must come before any typeof checks to prevent strings being treated as objects
+    if (value === null || value === undefined) {
+      return this.serializePrimitive(value);
+    }
+    
+    if (typeof value === 'string') {
+      return this.serializePrimitive(value);
+    }
+    
+    if (typeof value === 'number' || typeof value === 'boolean') {
       return this.serializePrimitive(value);
     }
 
-    // Check for circular references before checking max depth
-    // This ensures we detect cycles even at shallow depths
-    if (typeof value === 'object' && value !== null) {
+    // Handle arrays before general object check
+    if (Array.isArray(value)) {
+      // Check for circular references
       if (visited.has(value)) {
-        // Circular reference detected - return notation with path
         return `[Circular: ${path.join('.') || 'root'}]`;
       }
-      // Mark this object as visited
       visited.add(value);
-    }
-
-    // Check max depth for complex types (objects and arrays)
-    if (depth > this.config.maxDepth) {
-      return '[max depth exceeded]';
-    }
-
-    // Handle arrays
-    if (Array.isArray(value)) {
+      
+      // Check max depth
+      if (depth > this.config.maxDepth) {
+        visited.delete(value);
+        return '[max depth exceeded]';
+      }
+      
       const result = this.serializeArray(value, depth, visited, path);
-      // Remove from visited set after serialization to allow same object in different branches
       visited.delete(value);
       return result;
     }
 
-    // Handle objects
-    if (typeof value === 'object') {
+    // Handle objects (but not null, arrays, or primitives)
+    if (typeof value === 'object' && value !== null) {
+      // Check for circular references
+      if (visited.has(value)) {
+        return `[Circular: ${path.join('.') || 'root'}]`;
+      }
+      visited.add(value);
+      
+      // Check max depth
+      if (depth > this.config.maxDepth) {
+        visited.delete(value);
+        return '[max depth exceeded]';
+      }
+      
       const result = this.serializeObject(value, depth, visited, path);
-      // Remove from visited set after serialization to allow same object in different branches
       visited.delete(value);
       return result;
     }
