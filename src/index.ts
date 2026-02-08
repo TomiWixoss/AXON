@@ -1,21 +1,51 @@
 /**
- * AXON - Token-Oriented Object Notation Logging Framework
- *
- * A JavaScript/TypeScript logging framework designed to minimize token usage
- * in log files through the use of TOON format.
+ * AXON - Token-Oriented Logging Framework
+ * Main export file
  */
 
+// Logger exports
+export {
+  Logger,
+  LogLevel,
+  LogEntry,
+  LoggerConfig,
+  ResolvedConfig,
+  Environment,
+  MetadataFilter,
+  DEFAULT_CONFIG,
+  detectEnvironment,
+  loadFromEnvironment,
+  loadFromFile,
+  mergeConfigurations
+} from './logger';
+
 // Serializer exports
-export { TOONSerializer } from './serializer/TOONSerializer';
-export type { TOONSerializerConfig } from './serializer/TOONSerializer';
+export {
+  TOONSerializer,
+  TOONSerializerConfig
+} from './serializer';
 
 // Parser exports
-export { TOONParser } from './parser/TOONParser';
+export {
+  TOONParser,
+  StreamingParser
+} from './parser';
 
-// Utility exports
-export { TokenCounter } from './utils/TokenCounter';
+// File Manager exports
+export {
+  FileManager,
+  BrowserFileManager,
+  FileManagerConfig,
+  RotationMetadata
+} from './file-manager';
 
-// Logger exports
-export { LogLevel, LogEntry } from './logger';
+// Utils exports
+export {
+  TokenCounter
+} from './utils';
 
-// Main exports will be added as components are implemented
+// Extractor exports
+export {
+  LogExtractor
+} from './extractor';
+

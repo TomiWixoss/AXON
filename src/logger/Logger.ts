@@ -5,6 +5,10 @@
 
 import { LogLevel, LogEntry, LoggerConfig, ResolvedConfig } from './types';
 import { mergeConfigurations } from './ConfigLoader';
+import { TOONSerializer } from '../serializer/TOONSerializer';
+import { FileManager } from '../file-manager/FileManager';
+import { BrowserFileManager } from '../file-manager/BrowserFileManager';
+import { FileManagerConfig } from '../file-manager/types';
 
 /**
  * Validates configuration values and throws descriptive errors for invalid settings
@@ -21,7 +25,10 @@ function validateConfig(config: ResolvedConfig): void {
   }
 
   // Validate output path doesn't contain invalid characters
-  const invalidChars = /[<>:"|?*\x00-\x1F]/;
+  // On Windows, allow colon for drive letters (e.g., C:\)
+  const invalidChars = process.platform === 'win32' 
+    ? /[<>"|?*\x00-\x1F]/  // Windows: allow colon for drive letters
+    : /[<>:"|?*\x00-\x1F]/; // Unix: disallow colon
   if (invalidChars.test(config.outputPath)) {
     throw new Error(`Invalid outputPath: contains invalid characters. Path: ${config.outputPath}`);
   }
@@ -101,8 +108,9 @@ function validateConfig(config: ResolvedConfig): void {
  */
 export class Logger {
   private config: ResolvedConfig;
-  private buffer: (LogEntry | string)[] = [];
   private globalMetadata: Record<string, any> = {};
+  private serializer: TOONSerializer;
+  private fileManager: FileManager | BrowserFileManager;
 
   /**
    * Creates a new Logger instance
@@ -115,6 +123,31 @@ export class Logger {
 
     // Validate the merged configuration
     validateConfig(this.config);
+
+    // Initialize serializer
+    this.serializer = new TOONSerializer({
+      delimiter: this.config.delimiter,
+      omitNullValues: this.config.omitNullValues,
+      fieldAliases: this.config.fieldAliases,
+      maxDepth: 10
+    });
+
+    // Initialize file manager based on environment
+    const fileManagerConfig: FileManagerConfig = {
+      outputPath: this.config.outputPath,
+      maxFileSize: this.config.maxFileSize,
+      rotationInterval: this.config.rotationInterval,
+      bufferSize: this.config.bufferSize,
+      flushInterval: this.config.flushInterval,
+      environment: this.config.environment,
+      onError: this.config.onError
+    };
+
+    if (this.config.environment === 'browser') {
+      this.fileManager = new BrowserFileManager(fileManagerConfig);
+    } else {
+      this.fileManager = new FileManager(fileManagerConfig);
+    }
   }
 
   /**
@@ -174,26 +207,88 @@ export class Logger {
       return;
     }
 
-    // Create log entry with timestamp
-    const entry: LogEntry = {
-      ts: Date.now(),
-      lvl: level,
-      msg: message
-    };
-
-    // Merge global and per-entry metadata (per-entry wins on conflicts)
-    const hasGlobalMeta = Object.keys(this.globalMetadata).length > 0;
-    const hasPerEntryMeta = metadata && Object.keys(metadata).length > 0;
-    
-    if (hasGlobalMeta || hasPerEntryMeta) {
-      entry.meta = {
-        ...this.globalMetadata,
-        ...(metadata || {})
+    try {
+      // Create log entry with timestamp
+      const entry: LogEntry = {
+        ts: Date.now(),
+        lvl: level,
+        msg: message
       };
+
+      // Merge global and per-entry metadata (per-entry wins on conflicts)
+      const hasGlobalMeta = Object.keys(this.globalMetadata).length > 0;
+      const hasPerEntryMeta = metadata && Object.keys(metadata).length > 0;
+      
+      if (hasGlobalMeta || hasPerEntryMeta) {
+        let mergedMeta = {
+          ...this.globalMetadata,
+          ...(metadata || {})
+        };
+        
+        // Apply metadata filtering if configured
+        if (this.config.metadataFilter) {
+          mergedMeta = this.applyMetadataFilter(mergedMeta);
+        }
+        
+        // Only add meta field if there's metadata after filtering
+        if (Object.keys(mergedMeta).length > 0) {
+          entry.meta = mergedMeta;
+        }
+      }
+
+      // Serialize entry to TOON format
+      const toonString = this.serializer.serialize(entry);
+
+      // Write to file manager
+      this.fileManager.write(toonString);
+    } catch (error) {
+      // Handle serialization errors gracefully
+      if (this.config.onError) {
+        this.config.onError(error as Error);
+      }
+    }
+  }
+
+  /**
+   * Applies metadata filtering based on configured patterns
+   * @param metadata - Metadata object to filter
+   * @returns Filtered metadata object
+   * @private
+   */
+  private applyMetadataFilter(metadata: Record<string, any>): Record<string, any> {
+    if (!this.config.metadataFilter) {
+      return metadata;
     }
 
-    // Add entry to buffer
-    this.buffer.push(entry);
+    const filtered: Record<string, any> = {};
+    const { fieldNames = [], fieldPatterns = [] } = this.config.metadataFilter;
+    
+    // Compile regex patterns
+    const regexPatterns = fieldPatterns.map(pattern => new RegExp(pattern));
+
+    for (const [key, value] of Object.entries(metadata)) {
+      let shouldFilter = false;
+
+      // Check exact field names
+      if (fieldNames.includes(key)) {
+        shouldFilter = true;
+      }
+
+      // Check regex patterns
+      for (const regex of regexPatterns) {
+        if (regex.test(key)) {
+          shouldFilter = true;
+          break;
+        }
+      }
+
+      // Keep field if not filtered
+      if (!shouldFilter) {
+        filtered[key] = value;
+      }
+    }
+
+    return filtered;
   }
 
   /**
@@ -219,7 +314,23 @@ export class Logger {
   mark(label: string): void {
     const timestamp = Date.now();
     const marker = `=== MARKER: ${label} | ${timestamp} ===`;
-    this.buffer.push(marker);
+    this.fileManager.write(marker);
+  }
+
+  /**
+   * Flushes buffered log entries to storage
+   * Forces immediate write of all pending entries
+   */
+  async flush(): Promise<void> {
+    await this.fileManager.flush();
+  }
+
+  /**
+   * Closes the logger
+   * Flushes remaining entries and releases resources
+   */
+  async close(): Promise<void> {
+    await this.fileManager.close();
   }
 
   /**
@@ -231,11 +342,11 @@ export class Logger {
   }
 
   /**
-   * Gets the current buffer contents (for testing purposes)
-   * @returns Copy of the current buffer
+   * Gets the file manager (for testing purposes)
+   * @returns The file manager instance
    */
-  getBuffer(): ReadonlyArray<LogEntry | string> {
-    return [...this.buffer];
+  getFileManager(): FileManager | BrowserFileManager {
+    return this.fileManager;
   }
 
   /**
@@ -314,6 +425,112 @@ export class Logger {
     }
     if (partial.onError !== undefined) {
       this.config.onError = partial.onError;
+    }
+  }
+
+  /**
+   * Logs a fatal error message synchronously (bypasses buffering)
+   * Use for critical errors that must be written immediately
+   * @param message - The log message
+   * @param metadata - Optional metadata to attach to the log entry
+   */
+  async fatalSync(message: string, metadata?: Record<string, any>): Promise<void> {
+    // Apply log level filtering
+    if (LogLevel.FATAL < this.config.level) {
+      return;
+    }
+
+    try {
+      // Create log entry
+      const entry: LogEntry = {
+        ts: Date.now(),
+        lvl: LogLevel.FATAL,
+        msg: message
+      };
+
+      // Merge metadata
+      const hasGlobalMeta = Object.keys(this.globalMetadata).length > 0;
+      const hasPerEntryMeta = metadata && Object.keys(metadata).length > 0;
+      
+      if (hasGlobalMeta || hasPerEntryMeta) {
+        let mergedMeta = {
+          ...this.globalMetadata,
+          ...(metadata || {})
+        };
+        
+        // Apply metadata filtering if configured
+        if (this.config.metadataFilter) {
+          mergedMeta = this.applyMetadataFilter(mergedMeta);
+        }
+        
+        if (Object.keys(mergedMeta).length > 0) {
+          entry.meta = mergedMeta;
+        }
+      }
+
+      // Serialize and write immediately
+      const toonString = this.serializer.serialize(entry);
+      this.fileManager.write(toonString);
+      
+      // Flush immediately
+      await this.fileManager.flush();
+    } catch (error) {
+      if (this.config.onError) {
+        this.config.onError(error as Error);
+      }
+    }
+  }
+
+  /**
+   * Logs an error message synchronously (bypasses buffering)
+   * Use for critical errors that must be written immediately
+   * @param message - The log message
+   * @param metadata - Optional metadata to attach to the log entry
+   */
+  async errorSync(message: string, metadata?: Record<string, any>): Promise<void> {
+    // Apply log level filtering
+    if (LogLevel.ERROR < this.config.level) {
+      return;
+    }
+
+    try {
+      // Create log entry
+      const entry: LogEntry = {
+        ts: Date.now(),
+        lvl: LogLevel.ERROR,
+        msg: message
+      };
+
+      // Merge metadata
+      const hasGlobalMeta = Object.keys(this.globalMetadata).length > 0;
+      const hasPerEntryMeta = metadata && Object.keys(metadata).length > 0;
+      
+      if (hasGlobalMeta || hasPerEntryMeta) {
+        let mergedMeta = {
+          ...this.globalMetadata,
+          ...(metadata || {})
+        };
+        
+        // Apply metadata filtering if configured
+        if (this.config.metadataFilter) {
+          mergedMeta = this.applyMetadataFilter(mergedMeta);
+        }
+        
+        if (Object.keys(mergedMeta).length > 0) {
+          entry.meta = mergedMeta;
+        }
+      }
+
+      // Serialize and write immediately
+      const toonString = this.serializer.serialize(entry);
+      this.fileManager.write(toonString);
+      
+      // Flush immediately
+      await this.fileManager.flush();
+    } catch (error) {
+      if (this.config.onError) {
+        this.config.onError(error as Error);
+      }
     }
   }
 }

@@ -5,3 +5,4 @@
  */
 
 export { TOONParser } from './TOONParser';
+export { StreamingParser } from './StreamingParser';

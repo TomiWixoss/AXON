@@ -3,4 +3,5 @@
  */
 
 export { FileManager } from './FileManager';
+export { BrowserFileManager } from './BrowserFileManager';
 export { FileManagerConfig, RotationMetadata } from './types';

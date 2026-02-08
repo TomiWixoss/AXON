@@ -8,6 +8,7 @@ export {
   LoggerConfig,
   ResolvedConfig,
   Environment,
+  MetadataFilter,
   DEFAULT_CONFIG,
   detectEnvironment
 } from './types';

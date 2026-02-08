@@ -36,6 +36,18 @@ export type Environment = 'node' | 'browser';
 /**
  * Logger configuration interface
  * Defines all configuration options for the Logger
+ * 
+ * @example
+ * ```typescript
+ * const config: LoggerConfig = {
+ *   outputPath: './logs/app.txt',
+ *   level: LogLevel.INFO,
+ *   maxFileSize: 10 * 1024 * 1024,
+ *   rotationInterval: 'daily',
+ *   bufferSize: 100,
+ *   flushInterval: 5000
+ * };
+ * ```
  */
 export interface LoggerConfig {
   /** File path (Node.js) or storage key (Browser) for log output */
@@ -67,14 +79,40 @@ export interface LoggerConfig {
   
   /** Error callback for handling logging errors */
   onError?: (error: Error) => void;
+  
+  /** Metadata filter patterns - fields matching these patterns will be removed before serialization */
+  metadataFilter?: MetadataFilter;
+}
+
+/**
+ * Metadata filter configuration
+ * Defines patterns for filtering sensitive metadata fields
+ * 
+ * @example
+ * ```typescript
+ * const filter: MetadataFilter = {
+ *   fieldNames: ['password', 'apiKey'],
+ *   fieldPatterns: ['.*secret.*', '.*token.*']
+ * };
+ * ```
+ */
+export interface MetadataFilter {
+  /** Array of field name patterns (regex strings) to filter */
+  fieldPatterns?: string[];
+  
+  /** Array of exact field names to filter */
+  fieldNames?: string[];
 }
 
 /**
  * Resolved configuration with all optional fields filled with defaults
  */
-export interface ResolvedConfig extends Required<LoggerConfig> {
+export interface ResolvedConfig extends Required<Omit<LoggerConfig, 'metadataFilter'>> {
   /** Detected runtime environment */
   environment: Environment;
+  
+  /** Metadata filter patterns - fields matching these patterns will be removed before serialization */
+  metadataFilter?: MetadataFilter;
 }
 
 /**
